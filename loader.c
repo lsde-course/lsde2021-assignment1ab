@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
 
 	// first pass person, parse person, write to binary and store bin offset in hash table
 	person_offsets = kh_init(pht);	
-	person = malloc(sizeof(Person));
+	person = (Person*) malloc(sizeof(Person));
 	person->interest_n = person->knows_n = 0;
 	person_out = open_binout(person_output_file);
 	parse_csv(person_input_file, &person_line_handler);

@@ -1,6 +1,8 @@
 #define REPORTING_N (1<<20)
 #define LINEBUFLEN 1024
 
+#include <string.h>
+
 typedef struct {
 	unsigned long  person_id;
 	unsigned short birthday;
@@ -108,7 +110,7 @@ void* mmaprw(char* filename, unsigned long *filelen) {
 	return mmapopen(filename, filelen, 1);
 }
 
-char* makepath(char* dir, char* file, char* ext) {
+char* makepath(const char* dir, const char* file, const char* ext) {
 	char* out = (char*) malloc(strlen(dir)+strlen(file)+strlen(ext)+3);
 	sprintf(out, "%s/%s.%s", dir, file, ext);
 	return out;
