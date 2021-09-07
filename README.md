@@ -2,6 +2,8 @@
 
 <https://event.cwi.nl/lsde/2021/practical1.shtml>
 
+:warning: **Warning:** the code pushed to the `master` branch is executed on the leaderboard machine. This might take a significant amount of time and thus increase queueing times. Therefore, please work on a development branch (e.g. `dev`) and only merge & push to `master` when you would like to benchmark your code on the leaderboard machine.
+
 ## Assignments 1a and 1b
 
 To build and run the `cruncher` binary on SF100, use:
