@@ -50,8 +50,8 @@ int result_comparator(const void *v1, const void *v2) {
 
 #define ARTIST_FAN -1
 
-char get_score(unsigned int person, unsigned short artist, unsigned short artists[]) {
-	char score = 0;
+signed char get_score(unsigned int person, unsigned short artist, unsigned short artists[]) {
+	signed char score = 0;
 	for (unsigned long i = person_map[person].interests_first;
 	     i < person_map[person].interests_first + person_map[person].interest_n;
 	     i++)
@@ -89,7 +89,7 @@ void query(unsigned short qid, unsigned short artist, unsigned short artists[], 
 		{
 			unsigned int person2 = knows_map[knows2];
 
-			char score2 = get_score(person2, artist, artists);
+			signed char score2 = get_score(person2, artist, artists);
 			if (score2 < 2) continue; // checks whether person2 likely likes artist 
 
 			// checks whether person1 and friend2 live in the same city 
@@ -107,7 +107,7 @@ void query(unsigned short qid, unsigned short artist, unsigned short artists[], 
 				// checks whether person1 and person3 live in the same city 
 				if (person_map[person1].location != person_map[person3].location) continue;
 
-				char score3 = get_score(person3, artist, artists);
+				signed char score3 = get_score(person3, artist, artists);
 				if (score3 < 2) continue; // checks whether person3 likely likes artist 
 
 				for (unsigned long knows4 = person_map[person3].knows_first; 
