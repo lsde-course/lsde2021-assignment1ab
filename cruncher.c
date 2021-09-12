@@ -67,79 +67,88 @@ signed char get_score(unsigned int person, unsigned short artist, unsigned short
 }
 
 void query(unsigned short qid, unsigned short artist, unsigned short artists[], unsigned short bdstart, unsigned short bdend) {
-	unsigned int result_length = 0, result_maxsize = 15000;
-	Result* results = (Result*) malloc(result_maxsize * sizeof(Result));
+    unsigned int result_length = 0, result_maxsize = 15000;
+    Result* results = (Result*) malloc(result_maxsize * sizeof(Result));
+    signed char* person_score = (signed char*) malloc(person_num); //
 
-	printf("Running query %d\n", qid);
+    // Pass 1
+    printf("Running query %d\n", qid);
+    for (unsigned int person1 = 0; person1 < person_num; person1++) {
+        if (person1 > 0 && person1 % REPORTING_N == 0) {
+            printf("%.2f%%\n", 100 * (person1 * 1.0/person_num));
+        }
+        person_score[person1] = get_score(person1,artist,artists); //
+    }
 
-	for (unsigned int person1 = 0; person1 < person_num; person1++) {
-		if (person1 > 0 && person1 % REPORTING_N == 0) {
-			printf("%.2f%%\n", 100 * (person1 * 1.0/person_num));
-		}
-		// check whether person1 birthday is in range
-		if (person_map[person1].birthday < bdstart || 
-		    person_map[person1].birthday > bdend) continue; 
+    // Pass 2
+    for (unsigned int person1 = 0; person1 < person_num; person1++) {
+        if (person1 > 0 && person1 % REPORTING_N == 0) {
+            printf("%.2f%%\n", 100 * (person1 * 1.0/person_num));
+        }
+        // check whether person1 birthday is in range
+        if (person_map[person1].birthday < bdstart ||
+            person_map[person1].birthday > bdend) continue;
 
-		// checks whether person1 likes artist 
-		if (get_score(person1, artist, artists) != ARTIST_FAN) continue;
+        // checks whether person1 likes artist
+        if (person_score[person1] != ARTIST_FAN) continue;
 
-		for (unsigned long knows2 = person_map[person1].knows_first; 
-		     knows2 < person_map[person1].knows_first + person_map[person1].knows_n; 
-		     knows2++) 
-		{
-			unsigned int person2 = knows_map[knows2];
+        for (unsigned long knows2 = person_map[person1].knows_first;
+             knows2 < person_map[person1].knows_first + person_map[person1].knows_n;
+             knows2++)
+        {
+            unsigned int person2 = knows_map[knows2];
 
-			signed char score2 = get_score(person2, artist, artists);
-			if (score2 < 2) continue; // checks whether person2 likely likes artist 
+            signed char score2 = person_score[person2];
+            if (score2 < 2) continue; // checks whether person2 likely likes artist
 
-			// checks whether person1 and friend2 live in the same city 
-			if (person_map[person1].location != person_map[person2].location) continue;
+            // checks whether person1 and friend2 live in the same city
+            if (person_map[person1].location != person_map[person2].location) continue;
 
-			for (unsigned long knows3 = person_map[person2].knows_first; 
-			     knows3 < person_map[person2].knows_first + person_map[person2].knows_n; 
-			     knows3++) 
-			{
-				unsigned int person3 = knows_map[knows3];
+            for (unsigned long knows3 = person_map[person2].knows_first;
+                 knows3 < person_map[person2].knows_first + person_map[person2].knows_n;
+                 knows3++)
+            {
+                unsigned int person3 = knows_map[knows3];
 
-				// check that person3 > person2 (in order to avoid duplicate triangles)
-				if (person2 > person3) continue; // only report triangle when person2 < person3
+                // check that person3 > person2 (in order to avoid duplicate triangles)
+                if (person2 > person3) continue; // only report triangle when person2 < person3
 
-				// checks whether person1 and person3 live in the same city 
-				if (person_map[person1].location != person_map[person3].location) continue;
+                // checks whether person1 and person3 live in the same city
+                if (person_map[person1].location != person_map[person3].location) continue;
 
-				signed char score3 = get_score(person3, artist, artists);
-				if (score3 < 2) continue; // checks whether person3 likely likes artist 
+                signed char score3 = person_score[person3];
+                if (score3 < 2) continue; // checks whether person3 likely likes artist
 
-				for (unsigned long knows4 = person_map[person3].knows_first; 
-				     knows4 < person_map[person3].knows_first + person_map[person3].knows_n; 
-				     knows4++) 
-				{
-					// check whether they form a triangle, i.e. person1->person2->person3->person1
-					if (person1 != knows_map[knows4]) continue;
+                for (unsigned long knows4 = person_map[person3].knows_first;
+                     knows4 < person_map[person3].knows_first + person_map[person3].knows_n;
+                     knows4++)
+                {
+                    // check whether they form a triangle, i.e. person1->person2->person3->person1
+                    if (person1 != knows_map[knows4]) continue;
 
-					// add Result record
-					results[result_length].person1_id = person_map[person1].person_id;
-					results[result_length].person2_id = person_map[person2].person_id;
-					results[result_length].person3_id = person_map[person3].person_id;
-					results[result_length].score = score2 + score3;
-					if (++result_length >= result_maxsize) { // realloc result array if we run out of space
-						results = (Result*) realloc(results, (result_maxsize*=2) * sizeof(Result));
-					}
-					break;
-				}
-			}
-		}
-	}
+                    // add Result record
+                    results[result_length].person1_id = person_map[person1].person_id;
+                    results[result_length].person2_id = person_map[person2].person_id;
+                    results[result_length].person3_id = person_map[person3].person_id;
+                    results[result_length].score = score2 + score3;
+                    if (++result_length >= result_maxsize) { // realloc result array if we run out of space
+                        results = (Result*) realloc(results, (result_maxsize*=2) * sizeof(Result));
+                    }
+                    break;
+                }
+            }
+        }
+    }
 
-	// sort the results 
-	qsort(results, result_length, sizeof(Result), &result_comparator);
+    // sort the results
+    qsort(results, result_length, sizeof(Result), &result_comparator);
 
-	// output
-	for (unsigned int i = 0; i < result_length; i++) {
-		fprintf(outfile, "%d|%d|%lu|%lu|%lu\n", qid, results[i].score, 
-			results[i].person1_id, results[i].person2_id, results[i].person3_id);
-	}
-	free(results);
+    // output
+    for (unsigned int i = 0; i < result_length; i++) {
+        fprintf(outfile, "%d|%d|%lu|%lu|%lu\n", qid, results[i].score,
+                results[i].person1_id, results[i].person2_id, results[i].person3_id);
+    }
+    free(results);
 }
 
 #define QUERY_FIELD_QID 0
