@@ -92,10 +92,13 @@ void query(unsigned short qid, unsigned short artist, unsigned short artists[], 
         // checks whether person1 likes artist
         if (person_score[person1] != ARTIST_FAN) continue;
 
+        //
+        signed int* friends_qualified = (signed int*) malloc(person_map[person1].knows_first + person_map[person1].knows_n); //
+        signed int count = 0;
+        // Pass 2-1 find all qualified friends of P1
         for (unsigned long knows2 = person_map[person1].knows_first;
              knows2 < person_map[person1].knows_first + person_map[person1].knows_n;
-             knows2++)
-        {
+             knows2++) {
             unsigned int person2 = knows_map[knows2];
 
             signed char score2 = person_score[person2];
@@ -104,27 +107,21 @@ void query(unsigned short qid, unsigned short artist, unsigned short artists[], 
             // checks whether person1 and friend2 live in the same city
             if (person_map[person1].location != person_map[person2].location) continue;
 
-            for (unsigned long knows3 = person_map[person2].knows_first;
-                 knows3 < person_map[person2].knows_first + person_map[person2].knows_n;
-                 knows3++)
-            {
+            friends_qualified[count] = person2;
+            count++;
+        }
+
+        // Pass 2-2 find all combinations P2, P3
+
+        for (int i = 0; i < sizeof(friends_qualified)-1; i++ ) { // i for P2
+            unsigned int person2 = friends_qualified[i];
+            for (unsigned long knows3 = person_map[friends_qualified[i]].knows_first;
+                 knows3 < person_map[friends_qualified[i]].knows_first + person_map[friends_qualified[i]].knows_n;
+                 knows3++) {
                 unsigned int person3 = knows_map[knows3];
-
-                // check that person3 > person2 (in order to avoid duplicate triangles)
-                if (person2 > person3) continue; // only report triangle when person2 < person3
-
-                // checks whether person1 and person3 live in the same city
-                if (person_map[person1].location != person_map[person3].location) continue;
-
-                signed char score3 = person_score[person3];
-                if (score3 < 2) continue; // checks whether person3 likely likes artist
-
-                for (unsigned long knows4 = person_map[person3].knows_first;
-                     knows4 < person_map[person3].knows_first + person_map[person3].knows_n;
-                     knows4++)
-                {
-                    // check whether they form a triangle, i.e. person1->person2->person3->person1
-                    if (person1 != knows_map[knows4]) continue;
+                for (int j = i + 1; j < sizeof(friends_qualified); j++) { // j for P3
+                    // check P2 knows P3
+                    if (friends_qualified[j] != person3) continue;
 
                     // add Result record
                     results[result_length].person1_id = person_map[person1].person_id;
@@ -135,6 +132,7 @@ void query(unsigned short qid, unsigned short artist, unsigned short artists[], 
                         results = (Result*) realloc(results, (result_maxsize*=2) * sizeof(Result));
                     }
                     break;
+
                 }
             }
         }
